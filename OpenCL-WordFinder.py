@@ -82,10 +82,7 @@ def find_word_opencl(text_array, word, context, queue):
 
 def main(file_path):
     ensure_text_file(file_path)
-
     text_array = load_text_file(file_path)
-
-    word = input("Enter the word to search for: ").strip().lower()
 
     platform = cl.get_platforms()[0]
     device = platform.get_devices()[0]
@@ -96,29 +93,30 @@ def main(file_path):
     print(f"Using {num_cpu_threads} CPU threads.")
     print(f"Using GPU device: {device.name}")
 
-    # Measure GPU Time
-    print("Starting GPU search...")
-    start_gpu = time.time()
-    global_size, work_group_size, gpu_results = find_word_opencl(text_array, word, context, queue)
-    end_gpu = time.time()
-    print("GPU search completed.")
+    while True:
+        word = input("Enter the word to search for (or 'exit' to quit): ").strip().lower()
+        if word == 'exit':
+            break
 
-    # Measure CPU Time
-    print("Starting CPU search...")
-    start_cpu = time.time()
-    cpu_results = parallel_cpu_find(text_array, word, num_cpu_threads)
-    end_cpu = time.time()
-    print("CPU search completed.")
+        # Measure GPU Time
+        print("Starting GPU search...")
+        start_gpu = time.time()
+        global_size, work_group_size, gpu_results = find_word_opencl(text_array, word, context, queue)
+        end_gpu = time.time()
+        print("GPU search completed.")
 
-    print(f"GPU used {global_size // work_group_size} work groups, each with {work_group_size} workers.")
-    print(f"GPU found the word at positions: {gpu_results} in {end_gpu - start_gpu:.5f} seconds.")
-    print(f"CPU used {num_cpu_threads} threads.")
-    print(f"CPU found the word at positions: {cpu_results} in {end_cpu - start_cpu:.5f} seconds.")
+        # Measure CPU Time
+        print("Starting CPU search...")
+        start_cpu = time.time()
+        cpu_results = parallel_cpu_find(text_array, word, num_cpu_threads)
+        end_cpu = time.time()
+        print("CPU search completed.")
+
+        print(f"GPU used {global_size // work_group_size} work groups, each with {work_group_size} workers.")
+        print(f"GPU found the word at positions: {gpu_results} in {end_gpu - start_gpu:.5f} seconds.")
+        print(f"CPU used {num_cpu_threads} threads.")
+        print(f"CPU found the word at positions: {cpu_results} in {end_cpu - start_cpu:.5f} seconds.")
     
-    # Release OpenCL resources
-    context.release()
-    queue.release()
-
 if __name__ == '__main__':
     file_path = 'random_text.txt'
     main(file_path)
